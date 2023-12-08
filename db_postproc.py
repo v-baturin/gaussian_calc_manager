@@ -18,8 +18,13 @@ from ab_initio_postprocessing.tools_stability.aux_routines import list_fmt2table
 from ab_initio_postprocessing.graph_utils.my_graphs import draw_spectrum
 from ab_initio_postprocessing.graph_utils.formatting import cm2inch, set_ax_position_cm
 from ab_initio_postprocessing.abInitio_io_parse.gau_parse import getpdos_general
+from genutils.filesystem_tools import sh_execute
 import argparse
+from datetime import datetime
 
+tdy = datetime.today().strftime('%Y%m%d')
+
+HARTREE_in_eV = 27.21138505
 
 ptable = PeriodicTable()
 element_labels = np.array(ptable.element[:])
@@ -35,7 +40,7 @@ def process_db_path(db_path, *args, **kwargs):
     if os.path.isfile(db_path) and 'pkl' in str(db_path):
         pkl_file_list = [db_path]
     elif os.path.isdir(db_path):
-        pkl_file_list = Path(db_path).rglob('*.pkl')
+        pkl_file_list = Path(db_path).glob('*.pkl')
     elif isinstance(db_path, list):
         pkl_file_list = db_path
     return process_db_file_list(pkl_file_list, *args, **kwargs)
@@ -64,7 +69,7 @@ def process_db_file_list(file_list,
         write_db_to_poscars(master_dict,
                             str(res_folder) + '/POSCARS')
     if write_xyz:
-        write_xyz_of_n_lowest(master_dict, n_lowest=n_isoms, outdir=str(res_folder) + '/xyz_files')
+        write_xyz_of_n_lowest(master_dict, n_lowest=n_isoms, outdir=str(res_folder) + '/xyz_files', **kwargs)
     if write_text:
         # best_list = sorted_bests(master_dict, first_connected_map=first_connected_map, lowest_inds_dict_out=False,
         #                          sortby=sortby)
@@ -176,19 +181,27 @@ def write_db_to_poscars(master_dict, poscar_fname, n_lowest: int =1, vacuumsize=
             atms.center()
             write(poscar_fname, atms, append=append, vasp5=True)
 
-def write_xyz_of_n_lowest(master_dict, n_lowest, outdir='xyz_files'):
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-    for cmp, val in master_dict.items():
+def write_xyz_of_n_lowest(master_dict, n_lowest, outdir='xyz_files', all_xyz_file=None, **kwargs):
+    if all_xyz_file is not None:
+        sh_execute(f'rm -rf {all_xyz_file.as_posix()}')
+
+    os.makedirs(outdir, exist_ok=True)
+    sorted_cmp = get_sorted_compositions(master_dict)
+    for cmp in sorted_cmp:
+        comp = tuple(cmp)
+        val = master_dict[comp]
         n_avail = min(n_lowest, len(val['tasks']))
         for i in range(n_avail):
-            val['tasks'][i].ccdata.metadata['comments'] = [get_formula(val['tasks'][i].ccdata) +
-                                                     ' dE = {:6.5f}'.format(val['tasks'][i].ccdata.scfenergies[-1] -
-                                                                                val['tasks'][0].ccdata.scfenergies[-1])]
-            val['tasks'][i].ccdata.writexyz(outdir + '/' + get_formula(val['tasks'][i].ccdata) + '_i' +
-                                             str(i)+ '_' + str(val['fold_ind'][i]) + '.xyz')
+            xyz_fname = Path(outdir) / f"{get_formula(val['tasks'][i].ccdata)}_i{i}_{val['fold_ind'][i]}.xyz"
+            val['tasks'][i].ccdata.metadata['comments'] = [f'{get_formula(val["tasks"][i].ccdata)} '
+                                                           f'E(SCF) = {val["tasks"][i].ccdata.scfenergies[-1]:.4f} eV']
+            val['tasks'][i].ccdata.writexyz(xyz_fname.as_posix())
+            if all_xyz_file is not None:
+                sh_execute(f"cat {xyz_fname.as_posix()} >> {all_xyz_file}")
+                sh_execute(f"echo '' >> {all_xyz_file}")
 
-def write_txt_data(master_dict, element_symbols, res_folder, attributes: Union[Iterable, str] =None, n_isoms=1):
+
+def write_txt_data(master_dict, element_symbols, res_folder, attributes: Union[Iterable, str] =None, n_isoms=1, **kwargs):
     n_el = len(list(master_dict.keys())[0])
     if attributes is None:
         attributes = ['scfenergies', 'gap']
@@ -230,9 +243,12 @@ def write_txt_data(master_dict, element_symbols, res_folder, attributes: Union[I
                     attr_values_dict[str_attr[i_attr]].append(attr(master_dict[cmp]['tasks'][i].ccdata))
                 elif hasattr(master_dict[cmp]['tasks'][i].ccdata, attr):
                     try:
-                        attr_values_dict[str_attr[i_attr]].append(rgetattr(master_dict[cmp]['tasks'][i].ccdata, attr)[-1])
+                        vals = rgetattr(master_dict[cmp]['tasks'][i].ccdata, attr)[-1]
                     except TypeError:
-                        attr_values_dict[str_attr[i_attr]].append(rgetattr(master_dict[cmp]['tasks'][i].ccdata, attr))
+                        vals = rgetattr(master_dict[cmp]['tasks'][i].ccdata, attr)
+                        if attr == 'freeenergy':
+                            vals *= HARTREE_in_eV
+                    attr_values_dict[str_attr[i_attr]].append(vals)
                 else:
                     attr_values_dict[str_attr[i_attr]].append(rgetattr(master_dict[cmp]['tasks'][i], attr))
     table_dict = {**cmp_isom_dict, **attr_values_dict}
@@ -260,7 +276,7 @@ def write_txt_data(master_dict, element_symbols, res_folder, attributes: Union[I
             except:
                 continue
             attr_listfmt = np.hstack((cmps_array, values_column.reshape((-1,1))))
-            list_fmt2table(attr_listfmt, outfile=res_folder + f'/{attr}_TABLE.txt')
+            list_fmt2table(attr_listfmt, outfile=res_folder + f'/{tdy}_{attr}_TABLE.txt')
 
 
 
