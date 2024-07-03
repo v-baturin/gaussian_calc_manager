@@ -185,9 +185,11 @@ def cjson_load(json_fname, comment=r'\\\#'):
 
 
 if __name__ == '__main__':
-    jsn_comment = '/home/vsbat/SYNC/00_Current_PyWork/refine_with_gaussian/testfolder/test.json'
-    test_fname = '/home/vsbat/SYNC/00_Current_PyWork/refine_with_gaussian/testfolder/testcheckflag.txt'
-
-    test_dct = cjson_load(jsn_comment)
-    chk = checkflag(test_dct['tests']['testkey1']['flags'], test_fname)
-    print(chk)
+    # jsn_comment = '/home/vsbat/SYNC/00_Current_PyWork/refine_with_gaussian/testfolder/test.json'
+    # test_fname = '/home/vsbat/SYNC/00_Current_PyWork/refine_with_gaussian/testfolder/testcheckflag.txt'
+    #
+    # test_dct = cjson_load(jsn_comment)
+    # chk = checkflag(test_dct['tests']['testkey1']['flags'], test_fname)
+    # print(chk)
+    print(os.getcwd())
+    print(sh_execute('vasp5 4 >> out'))

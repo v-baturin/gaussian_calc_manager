@@ -15,7 +15,7 @@ from genutils.misc import rhasattr, rgetattr, get_sorted_compositions
 from matplotlib import pyplot as plt
 from prettytable import PrettyTable
 from ab_initio_postprocessing.tools_stability.aux_routines import list_fmt2table
-from ab_initio_postprocessing.graph_utils.my_graphs import draw_spectrum
+from ab_initio_postprocessing.graph_utils.my_graphs import draw_DOS
 from ab_initio_postprocessing.graph_utils.formatting import cm2inch, set_ax_position_cm
 from ab_initio_postprocessing.abInitio_io_parse.gau_parse import getpdos_general
 from genutils.filesystem_tools import sh_execute
@@ -340,8 +340,8 @@ def plot_el_spectra_binary(master_dict, element_symbols, savefiles=True, save_fo
 
             normalization = np.sum(composition) if norm_by_natom else True
 
-            draw_spectrum(specup=up_dos, specdn=dn_dos, e_fermi=0, shareax=base,
-                          label=get_formula(cc_data), sigma=0.05, normalization=normalization, **drawspectrum_kwargs)
+            draw_DOS(specup=up_dos, specdn=dn_dos, e_fermi=0, shareax=base,
+                     label=get_formula(cc_data), sigma=0.05, normalization=normalization, **drawspectrum_kwargs)
             plt.xticks(np.arange(*drawspectrum_kwargs['span'], 1))
             if not groupped:
                 ax = plt.gca()
