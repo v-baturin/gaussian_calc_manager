@@ -10,15 +10,15 @@ from ase.io import read, write
 from ase import Atoms
 from pathlib import Path
 from cclib.parser.utils import PeriodicTable, convertor
-from ab_initio_postprocessing.abInitio_io_parse.gau_parse import get_gap, get_formula, get_kohn_sham
-from genutils.misc import rhasattr, rgetattr, get_sorted_compositions
+from my_packages.materials_tools.abInitio_io_parse.gau_parse import get_gap, get_formula, get_kohn_sham
+from my_packages.genutils.misc import rhasattr, rgetattr, get_sorted_compositions
 from matplotlib import pyplot as plt
 from prettytable import PrettyTable
-from ab_initio_postprocessing.tools_stability.aux_routines import list_fmt2table
-from ab_initio_postprocessing.graph_utils.my_graphs import draw_DOS
-from ab_initio_postprocessing.graph_utils.formatting import cm2inch, set_ax_position_cm
-from ab_initio_postprocessing.abInitio_io_parse.gau_parse import getpdos_general
-from genutils.filesystem_tools import sh_execute
+from my_packages.materials_tools.tools_stability.aux_routines import list_fmt2table
+from my_packages.materials_tools.graph_utils.my_graphs import draw_DOS
+from my_packages.materials_tools.graph_utils.formatting import cm2inch, set_ax_position_cm
+from my_packages.materials_tools.abInitio_io_parse.gau_parse import getpdos_general
+from my_packages.genutils.filesystem_tools import sh_execute
 import argparse
 from datetime import datetime
 
